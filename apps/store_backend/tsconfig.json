@@ -1,14 +1,19 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "CommonJS",
+    "target": "ES6",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "@models/*": ["models/*"],
+      "@interfaces/*": ["interfaces/*"]
+    }
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src"],
   "exclude": ["node_modules"]
 }
