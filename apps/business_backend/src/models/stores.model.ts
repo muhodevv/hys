@@ -21,15 +21,6 @@ const storeSchema: Schema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Plan",
     },
-    addresses: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "Address",
-        },
-    ],
-    creationDate: {
-        type: Date,
-    },
     trialExpirationDate: {
         type: Date,
     },
@@ -51,13 +42,8 @@ const storeSchema: Schema = new Schema({
         type: Boolean,
         default: true,
     },
-    created: {
-        type: Date,
-        default: Date.now(),
-    },
-    image: {
-        type: String,
-    },
+}, {
+    timestamps: true,
 });
 
 const storeModel = model<Store & Document>("Store", storeSchema);

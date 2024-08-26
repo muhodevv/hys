@@ -1,13 +1,14 @@
 import express from 'express';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import { connectMongo } from './db';
 import { errorHandler } from 'middlewares';
-
-dotenv.config();
+import initRoutes from 'routes';
 
 const app = express();
 
 app.use(express.json());
+
+initRoutes(app);
 
 app.use(errorHandler);
 

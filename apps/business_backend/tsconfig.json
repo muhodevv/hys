@@ -13,7 +13,8 @@
       "@models/*": ["models/*"],
       "@interfaces/*": ["interfaces/*"],
       "@db/*": ["db/*"],
-      "@utils/*": ["utils/*"]
+      "@utils/*": ["utils/*"],
+      "@constants/*": ["constants/*"]
     }
   },
   "include": ["src"],
