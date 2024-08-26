@@ -12,7 +12,8 @@
     "paths": {
       "@models/*": ["models/*"],
       "@interfaces/*": ["interfaces/*"],
-      "@db/*": ["db/*"]
+      "@db/*": ["db/*"],
+      "@utils/*": ["utils/*"]
     }
   },
   "include": ["src"],

@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { connectMongo } from './db';
-
+import { errorHandler } from 'middlewares';
 
 dotenv.config();
 
@@ -9,11 +9,7 @@ const app = express();
 
 app.use(express.json());
 
-app.get('/users', async (req, res) => {
-});
-
-app.post('/users', async (req, res) => {
-});
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 6000;
 
