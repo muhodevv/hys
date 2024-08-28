@@ -10,7 +10,8 @@
     "paths": {
       "@/*": ["*"],
       "@components/*": ["components/*"],
-      "@lib/*": ["lib/*"]
+      "@lib/*": ["lib/*"],
+      "@constants/*": ["@constants/*"]
     }
   },
   "include": [
