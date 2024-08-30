@@ -15,7 +15,7 @@ export default function StartForm() {
 
     const { error, registerStore, registerLoading } = useAuth();
 
-    const { handleSubmit, register, formState, setValue } = useForm<RegisterStoreForm>({
+    const { handleSubmit, register, formState } = useForm<RegisterStoreForm>({
         values: {
             email: "",
             firstName: "",

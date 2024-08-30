@@ -10,3 +10,19 @@ export interface RegisterStoreForm {
 }
 
 export interface RegisterStorePayload extends RegisterStoreForm { }
+
+export interface LoginForm {
+    email: string,
+    password: string
+}
+
+export interface LoginPayload extends LoginForm { }
+
+export type IUser = {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatar?: string;
+    stores: any[]; //TODO: Add store type
+};

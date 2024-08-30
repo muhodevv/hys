@@ -14,7 +14,9 @@
       "@interfaces/*": ["interfaces/*"],
       "@db/*": ["db/*"],
       "@utils/*": ["utils/*"],
-      "@constants/*": ["constants/*"]
+      "@constants/*": ["constants/*"],
+      "@controllers/*": ["controllers/*"],
+      "@middlewares/*": ["middlewares/*"]
     }
   },
   "include": ["src"],

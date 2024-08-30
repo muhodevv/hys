@@ -29,6 +29,12 @@ const sendTokenResponse = (user: any, statusCode: number, res: Response) => {
         .json({ success: true, token, user });
 }
 
+export const getMe = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const user = (req as any).user;
+
+    res.status(200).json({ success: true, user });
+})
+
 export const registerAndCreateStore = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const {
         storeName,
@@ -66,4 +72,30 @@ export const registerAndCreateStore = catchAsync(async (req: Request, res: Respo
 
     // Send token
     sendTokenResponse(user, 201, res);
+})
+
+export const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
+
+    // Validate email and password
+    if (!email || !password) {
+        return next(new CustomError('Please provide an email and password', 400));
+    }
+
+    // Check for user
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+        return next(new CustomError('Invalid credentials', 401));
+    }
+
+    // Check if password matches
+    const isMatch = await user.matchPassword(password);
+
+    if (!isMatch) {
+        return next(new CustomError('Invalid credentials', 401));
+    }
+
+    // Send token
+    sendTokenResponse(user, 200, res);
 })
