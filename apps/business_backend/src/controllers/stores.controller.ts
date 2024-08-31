@@ -3,6 +3,14 @@ import { NextFunction, Request, Response } from "express";
 import Store from "@models/stores.model"
 import CustomError from "@utils/CustomError";
 
+export const listStoresOfLoggedInUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = (req as any).user._id;
+
+    const stores = await Store.find({ members: userId })
+
+    res.status(200).json({ success: true, docs: stores });
+})
+
 export const getStores = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const stores = await Store.find()
     res.status(200).json({ success: true, docs: stores });

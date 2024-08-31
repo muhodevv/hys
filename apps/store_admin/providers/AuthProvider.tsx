@@ -69,25 +69,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getMeQuery = useGetMeQuery();
 
     useEffect(() => {
-        if (getMeQuery.isSuccess) {
+        if (getMeQuery.isStale) {
             if (getMeQuery.data?.success) {
                 setLoggedIn(User(getMeQuery.data.user));
             } else {
                 setUnLoggedIn();
             }
         }
-    }, [getMeQuery.isSuccess]);
+    }, [getMeQuery.isStale]);
 
     useEffect(() => {
         if (state.isFetching) return;
 
+        console.log({ state })
+
         if (state.isLoggedIn && isAuthRoute) {
             //TODO: send to first store of user
-            router.push("/");
+            return router.push("/");
         }
 
         if (!state.isLoggedIn && !isAuthRoute) {
-            router.push("/login");
+            return router.push("/login");
         }
     }, [state.isLoggedIn, state.isFetching, isAuthRoute]);
 
