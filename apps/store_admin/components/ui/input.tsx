@@ -1,11 +1,11 @@
-import { InputHTMLAttributes, ReactNode } from "react";
+import { InputHTMLAttributes, isValidElement, ReactElement, ReactNode } from "react";
 import { FieldValues, Path, UseFormRegister } from "react-hook-form";
 import { cn } from "@/lib/utils";
 
 type InputProps<T extends FieldValues> =
-  InputHTMLAttributes<HTMLInputElement> & {
+  Omit<InputHTMLAttributes<HTMLInputElement>, "prefix"> & {
     name: Path<T>;
-    label: string;
+    label?: string;
     register: UseFormRegister<T>;
     error?: string;
     help?: string;
@@ -28,14 +28,14 @@ export const Input = <T extends FieldValues>({
       "n-field--error": error,
     })}
   >
-    <label className="n-field__label">{label}</label>
-    <div className="n-field__input mt-3 mb-2 overflow-hidden flex items-center gap-x-2 border-2 border-gray-200 focus-within:border-blue-500 focus-within:ring-blue-500 text-sm rounded-md bg-white">
-      {prefix && (
+    <label className="n-field__label text-sm">{label}</label>
+    <div className="n-field__input mt-2 mb-2 overflow-hidden flex items-center gap-x-2 border border-input bg-transparent focus-within:border-blue-500 focus-within:ring-blue-500 text-sm rounded-md bg-white">
+      {isValidElement(prefix) && (
         <div className="text-black/60 pl-4 n-field__prefix">{prefix}</div>
       )}
       <input
         {...rest}
-        className="py-3 px-4 block flex-1 rounded-none text-sm outline-none bg-transparent"
+        className="flex h-9 w-full px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground outline-none disabled:cursor-not-allowed disabled:opacity-50"
         {...register(name)}
       />
       {suffix && (

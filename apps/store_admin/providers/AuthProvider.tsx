@@ -22,6 +22,7 @@ type AuthContextType = {
     loginLoading: boolean;
     error?: string;
     registerLoading: boolean;
+    user: IUser | null;
 };
 
 type State = {
@@ -36,6 +37,7 @@ const AuthContext = createContext<AuthContextType>({
     loginLoading: false,
     login: (payload: LoginPayload) => { },
     registerStore: (payload: RegisterStorePayload) => { },
+    user: null
 });
 
 export function useAuth() {
@@ -143,9 +145,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 registerLoading,
                 login,
                 loginLoading,
+                user: state.user
             }}
         >
-            {state.isLoggedIn ? "Logged in" : "Not logged in"}
             {children}
         </AuthContext.Provider>
     );

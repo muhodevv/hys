@@ -5,6 +5,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider, QueryProvider } from "@/providers";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -36,7 +37,9 @@ export default async function RootLayout({
         <QueryProvider>
           <NextIntlClientProvider messages={messages}>
             <AuthProvider>
-              {children}
+              <TooltipProvider>
+                {children}
+              </TooltipProvider>
             </AuthProvider>
           </NextIntlClientProvider>
         </QueryProvider>
