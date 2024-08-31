@@ -13,7 +13,8 @@ export interface RegisterStorePayload extends RegisterStoreForm { }
 
 export interface LoginForm {
     email: string,
-    password: string
+    password: string,
+    acceptTOS: boolean
 }
 
 export interface LoginPayload extends LoginForm { }

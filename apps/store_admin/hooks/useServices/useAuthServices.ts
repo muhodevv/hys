@@ -1,4 +1,4 @@
-import { getMeService, loginService, registerAndCreateStoreService } from "@/services";
+import { getMeService, loginService, logoutService, registerAndCreateStoreService } from "@/services";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 export function useRegisterStoreMutation() {
@@ -10,6 +10,12 @@ export function useRegisterStoreMutation() {
 export function useLoginMutation() {
     return useMutation({
         mutationFn: loginService,
+    })
+}
+
+export function useLogoutMutation() {
+    return useMutation({
+        mutationFn: logoutService,
     })
 }
 

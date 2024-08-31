@@ -99,3 +99,12 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     // Send token
     sendTokenResponse(user, 200, res);
 })
+
+export const logout = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    res.cookie('token', 'none', {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true
+    })
+
+    res.status(200).json({ success: true, data: {} });
+})

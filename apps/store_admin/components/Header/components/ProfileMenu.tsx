@@ -9,7 +9,7 @@ import { useState } from "react";
 
 export function ProfileMenu() {
     const [position, setPosition] = useState("top")
-    const { user } = useAuth()
+    const { user, logout } = useAuth()
     const listStoresQuery = useListStoresOfLoggedInUserQuery()
 
     const stores = array<any>(listStoresQuery.data?.docs);
@@ -77,7 +77,9 @@ export function ProfileMenu() {
             </DropdownMenuRadioGroup>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500">
+            <DropdownMenuItem onClick={() => {
+                logout()
+            }} className="text-red-500">
                 Log out
             </DropdownMenuItem>
         </DropdownMenuContent>

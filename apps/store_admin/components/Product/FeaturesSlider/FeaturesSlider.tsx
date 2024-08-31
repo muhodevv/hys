@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
-export default function FeaturesSlider() {
+export function FeaturesSlider() {
     const t = useTranslations("Auth");
 
     return (

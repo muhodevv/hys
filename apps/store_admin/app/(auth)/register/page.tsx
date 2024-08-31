@@ -1,6 +1,6 @@
 "use client"
 
-import FeaturesSlider from "./components/FeaturesSlider";
+import { FeaturesSlider } from "@/components/Product";
 import StartForm from "./components/StartForm";
 
 export default function RegisterPage() {

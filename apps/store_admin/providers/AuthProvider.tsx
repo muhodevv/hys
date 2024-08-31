@@ -2,6 +2,7 @@
 import {
     useGetMeQuery,
     useLoginMutation,
+    useLogoutMutation,
     useRegisterStoreMutation,
 } from "@/hooks/useServices";
 import { User } from "@/Resources";
@@ -23,6 +24,7 @@ type AuthContextType = {
     error?: string;
     registerLoading: boolean;
     user: IUser | null;
+    logout: () => void;
 };
 
 type State = {
@@ -37,7 +39,8 @@ const AuthContext = createContext<AuthContextType>({
     loginLoading: false,
     login: (payload: LoginPayload) => { },
     registerStore: (payload: RegisterStorePayload) => { },
-    user: null
+    user: null,
+    logout: () => { },
 });
 
 export function useAuth() {
@@ -62,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isAuthRoute = useMemo(() => AUTH_ROUTES.some(route => pathname.startsWith(route)), [pathname]);
 
     const loginMutation = useLoginMutation();
+    const logoutMutation = useLogoutMutation();
     const registerStoreMutation = useRegisterStoreMutation();
     const [registerLoading, setRegisterLoading] = useState(false);
     const [loginLoading, setLoginLoading] = useState(false);
@@ -69,19 +73,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const getMeQuery = useGetMeQuery();
 
     useEffect(() => {
-        if (getMeQuery.isStale) {
-            if (getMeQuery.data?.success) {
-                setLoggedIn(User(getMeQuery.data.user));
-            } else {
-                setUnLoggedIn();
-            }
+        if (!getMeQuery.isFetched) return;
+
+        if (getMeQuery.data?.success) {
+            setLoggedIn(User(getMeQuery.data.user));
+        } else {
+            setUnLoggedIn();
         }
-    }, [getMeQuery.isStale]);
+    }, [getMeQuery.data, getMeQuery.isFetched]);
 
     useEffect(() => {
         if (state.isFetching) return;
-
-        console.log({ state })
 
         if (state.isLoggedIn && isAuthRoute) {
             //TODO: send to first store of user
@@ -106,6 +108,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             },
         });
     };
+
+    const logout = () => {
+        logoutMutation.mutate(undefined, {
+            onSuccess: () => {
+                setUnLoggedIn();
+            },
+        });
+    }
 
     const registerStore = (payload: RegisterStorePayload) => {
         setRegisterLoading(true);
@@ -137,8 +147,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     };
 
-
-
     return (
         <AuthContext.Provider
             value={{
@@ -147,7 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 registerLoading,
                 login,
                 loginLoading,
-                user: state.user
+                user: state.user,
+                logout,
             }}
         >
             {children}
