@@ -6,6 +6,11 @@ const storeSchema: Schema = new Schema({
         type: String,
         required: true,
     },
+    key: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     logo: {
         type: String,
     },

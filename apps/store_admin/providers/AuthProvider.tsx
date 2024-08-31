@@ -1,13 +1,16 @@
 "use client";
 import {
     useGetMeQuery,
+    useListStoresOfLoggedInUserQuery,
     useLoginMutation,
     useLogoutMutation,
     useRegisterStoreMutation,
 } from "@/hooks/useServices";
+import { array } from "@/lib/utils";
 import { User } from "@/Resources";
 import type { LoginPayload, RegisterStorePayload, IUser } from "@/types";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import {
     createContext,
     ReactNode,
@@ -25,6 +28,8 @@ type AuthContextType = {
     registerLoading: boolean;
     user: IUser | null;
     logout: () => void;
+    stores: any[];
+    activeStoreId: null | string;
 };
 
 type State = {
@@ -41,6 +46,8 @@ const AuthContext = createContext<AuthContextType>({
     registerStore: (payload: RegisterStorePayload) => { },
     user: null,
     logout: () => { },
+    stores: [],
+    activeStoreId: null,
 });
 
 export function useAuth() {
@@ -55,14 +62,32 @@ const AUTH_ROUTES = ["/register", "/login"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const router = useRouter()
+    const router = useRouter();
     const [state, setState] = useState<State>({
         isLoggedIn: false,
         user: null,
         isFetching: true,
     });
+    const routerParams = useParams();
+    const storeSlug = routerParams?.storeSlug;
 
-    const isAuthRoute = useMemo(() => AUTH_ROUTES.some(route => pathname.startsWith(route)), [pathname]);
+    const isAuthRoute = useMemo(
+        () => AUTH_ROUTES.some((route) => pathname.startsWith(route)),
+        [pathname]
+    );
+
+    const listStoresQuery = useListStoresOfLoggedInUserQuery({
+        enabled: state.isLoggedIn && !!state.user,
+    });
+
+    const stores = array<any>(listStoresQuery.data?.docs);
+
+    const activeStoreId = useMemo(() => {
+        if (!storeSlug) return null;
+
+        const store = stores.find((store) => store.key === routerParams.storeSlug);
+        return store?._id || null;
+    }, [storeSlug, stores]);
 
     const loginMutation = useLoginMutation();
     const logoutMutation = useLogoutMutation();
@@ -95,6 +120,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, [state.isLoggedIn, state.isFetching, isAuthRoute]);
 
+    useEffect(() => {
+        if (pathname !== "/") return
+
+        if (!state.isLoggedIn || state.isFetching) return
+
+        if (stores.length === 0) return
+
+        const currentstoreId = localStorage.getItem("activeStoreId")
+
+        let storeKey = stores[0]?.key || ""
+        let storeId = stores[0]?._id || ""
+
+        if (currentstoreId) {
+            const findStore = stores.find(store => store?._id === currentstoreId)
+            if (findStore) {
+                storeKey = findStore.key
+                storeId = findStore._id
+            }
+        }
+
+        if (!storeKey || !storeId) return
+        localStorage.setItem("activeStoreId", storeId)
+        router.push(`/${storeKey}`)
+    }, [pathname, state.isLoggedIn, state.isFetching, stores])
+
     const login = (payload: LoginPayload) => {
         setLoginLoading(true);
         loginMutation.mutate(payload, {
@@ -115,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setUnLoggedIn();
             },
         });
-    }
+    };
 
     const registerStore = (payload: RegisterStorePayload) => {
         setRegisterLoading(true);
@@ -157,9 +207,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 loginLoading,
                 user: state.user,
                 logout,
+                activeStoreId,
+                stores,
             }}
         >
-            {children}
+            {state.isFetching || listStoresQuery.isFetching ? (
+                <div>Loading...</div>
+            ) : storeSlug && state.isLoggedIn && !activeStoreId ? (
+                <div>
+                    <div>
+                        Permission Denied
+                    </div>
+                    <Link href="/">Return Home</Link>
+                </div>
+            ) : (
+                children
+            )}
         </AuthContext.Provider>
     );
 }
