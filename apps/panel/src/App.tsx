@@ -10,7 +10,17 @@ function App() {
         token: {
           colorPrimary: '#5A54F9',
           borderRadius: 20,
+          colorBgLayout: '#FFF',
         },
+        components: {
+          Layout: {
+            siderBg: '#f9f9f9',
+            lightSiderBg: '#f9f9f9',
+          },
+          Menu: {
+            colorBgContainer: '#f9f9f9',
+          }
+        }
       }}
     >
       <AuthProvider>

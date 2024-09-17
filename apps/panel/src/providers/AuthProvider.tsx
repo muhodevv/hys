@@ -29,9 +29,9 @@ const AuthContext = createContext<AuthContextType>({
 
 export function AuthProvider({ children }: AuthProviderProps) {
     const [state, setState] = useState<StateType>({
-        isLoggedIn: false,
+        isLoggedIn: true,
         user: null,
-        isFetching: true,
+        isFetching: false,
     })
 
     const login = () => {
