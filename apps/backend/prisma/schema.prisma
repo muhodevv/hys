@@ -1,0 +1,626 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  active
+  pending
+  passive
+}
+
+enum VariantOptionType {
+  text
+  color
+}
+
+enum StockLocationTypeEnum {
+  store
+  warehouse
+}
+
+enum StockHistoryType {
+  initial
+  transfer_opened
+  transfer_received
+  transfer_rejected
+  correction_default
+  received
+  stocktaking
+  damaged
+  theft_or_missing
+  return_restock
+  promotion_or_donation
+}
+
+enum TransferStatus {
+  DRAFT
+  OPEN
+  PARTIALLY_OPEN
+  COMPLETED
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  OPEN
+  PARTIALLY_OPEN
+  COMPLETED
+}
+
+enum OrderPaymentStatus {
+  paid
+  unpaid
+  refund
+}
+
+enum OrderFulfillmentStatus {
+  unfulfilled
+  fulfilled
+}
+
+enum OrderProductType {
+  custom
+  reference
+}
+
+enum AddressType {
+  home
+  office
+  billing
+}
+
+model User {
+  id                    String         @id @default(uuid())
+  name                  String?
+  firstName             String?
+  lastName              String?
+  password              String?
+  email                 String         @unique
+  emailVerified         Boolean?
+  avatar                String?
+  phone                 String?
+  country               String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  passwordChangedAt     DateTime?
+  passwordResetToken    String?
+  passwordResetExpires  DateTime?
+  status                UserStatus     @default(active)
+  orders                Order[]
+  roleId                String?
+  role                  Role?          @relation(fields: [roleId], references: [id])
+  isStaff               Boolean        @default(false)
+  isDeleted             Boolean        @default(false)
+  wishlists             WishList[]
+  stockOperationHistory StockHistory[]
+  addresses             UserAddress[]
+}
+
+model UserAddress {
+  id             String      @id @default(uuid())
+  name           String? // Address name optional
+  firstName      String? // user first name
+  lastName       String? // user last name
+  isDefault      Boolean     @default(false)
+  status         Boolean     @default(true)
+  isDeleted      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  country        String
+  district       String?
+  address        String?
+  zipCode        String?
+  type           AddressType @default(home)
+  userId         String
+  orderShippings Order[]     @relation(name: "orderShippingAddres")
+  orderBillings  Order[]     @relation(name: "orderBillingAddres")
+  user           User        @relation(fields: [userId], references: [id])
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  status      Boolean  @default(true)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users User[]
+
+  permissions Permission[]
+}
+
+model Permission {
+  id        String   @id @default(uuid())
+  scope     String
+  canRead   Boolean  @default(false)
+  canCreate Boolean  @default(false)
+  canUpdate Boolean  @default(false)
+  canDelete Boolean  @default(false)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([roleId, scope], name: "permissionIdentifier")
+}
+
+model Brand {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String
+  content   String?
+  status    Boolean   @default(true)
+  products  Product[]
+  isDeleted Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([slug], name: "brandsSlugIdentifier")
+}
+
+model StockLocation {
+  id                   String                @id @default(uuid())
+  name                 String
+  address              String?
+  country              String?
+  city                 String?
+  zipCode              String?
+  lat                  String?
+  long                 String?
+  email                String?
+  website              String?
+  phone                String?
+  status               Boolean               @default(true)
+  defaultLocation      Boolean               @default(false)
+  contactName          String?
+  stockLocationType    StockLocationTypeEnum @default(warehouse)
+  sourceTransfers      Transfer[]            @relation(name: "sourceTransferRelation")
+  destinationTransfers Transfer[]            @relation(name: "destinationTransferRelation")
+  purchaseOrders       PurchaseOrder[]       @relation(name: "destinationPurchaseOrderRelation")
+  stocks               Stock[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  isDeleted            Boolean               @default(false)
+}
+
+model Stock {
+  id               String         @id @default(uuid())
+  name             String?
+  quantity         Int            @default(0)
+  incomingQuantity Int            @default(0)
+  status           Boolean        @default(true)
+  productId        String
+  stockLocationId  String
+  stockLocation    StockLocation  @relation(fields: [stockLocationId], references: [id])
+  product          Product        @relation(fields: [productId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  history          StockHistory[]
+
+  @@unique([productId, stockLocationId], name: "product_stocklocation_constraint")
+  @@index([productId])
+}
+
+model StockHistory {
+  id                          String           @id @default(uuid())
+  stockId                     String
+  stock                       Stock            @relation(fields: [stockId], references: [id])
+  type                        StockHistoryType @default(initial)
+  description                 String?
+  userId                      String
+  detail                      Json?
+  user                        User             @relation(fields: [userId], references: [id])
+  quantity                    Int              @default(0) //Indicates by which amount the stock has been decreased or increased.
+  totalQuantityAfterOperation Int              @default(0) // Shows the total amount in stock after the transaction is made
+}
+
+model Carrier {
+  id                       String          @id @default(uuid())
+  name                     String
+  displayName              String
+  pattern                  String?
+  patternOptions           String?
+  supportsShipmentTracking Boolean         @default(false)
+  transfers                Transfer[]
+  purchaseOrders           PurchaseOrder[]
+  isDeleted                Boolean         @default(false)
+}
+
+model Supplier {
+  id             String          @id @default(uuid())
+  name           String
+  companyName    String?
+  legalName      String?
+  phone          String?
+  email          String?
+  address        String?
+  isDeleted      Boolean         @default(false)
+  status         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  purchaseOrders PurchaseOrder[]
+}
+
+model Transfer {
+  id                            String            @id @default(uuid())
+  name                          String
+  referenceNumber               String?
+  tags                          String[]
+  sourceLocationId              String
+  sourceLocation                StockLocation     @relation(name: "sourceTransferRelation", fields: [sourceLocationId], references: [id])
+  destinationLocationId         String
+  destinationLocation           StockLocation     @relation(name: "destinationTransferRelation", fields: [destinationLocationId], references: [id])
+  totalAcceptedQuantity         Int               @default(0)
+  totalRejectedQuantity         Int               @default(0)
+  totalRemainingQuantity        Int               @default(0)
+  totalReceivedQuantity         Int               @default(0)
+  totalTransferProductsQuantity Int               @default(0)
+  products                      TransferProduct[]
+  arrivesAt                     DateTime?
+  trackingNumber                String?
+  carrierId                     String?
+  carrier                       Carrier?          @relation(fields: [carrierId], references: [id])
+  isDeleted                     Boolean           @default(false)
+  status                        TransferStatus    @default(OPEN)
+  createdAt                     DateTime          @default(now())
+  updatedAt                     DateTime          @updatedAt
+}
+
+model TransferProduct {
+  id               String   @id @default(uuid())
+  productId        String
+  product          Product  @relation(fields: [productId], references: [id])
+  transferId       String
+  transfer         Transfer @relation(fields: [transferId], references: [id])
+  quantity         Int      @default(0)
+  acceptedQuantity Int      @default(0)
+  rejectedQuantity Int      @default(0)
+  title            String // product title
+  description      String? //product description
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([productId, transferId], name: "transfer_product_Identifier")
+}
+
+model PurchaseOrder {
+  id                            String                 @id @default(uuid())
+  name                          String
+  referenceNumber               String?
+  waybillNumber                 String?
+  invoiceNumber                 String?
+  tags                          String[]
+  supplierId                    String
+  supplier                      Supplier               @relation(fields: [supplierId], references: [id])
+  destinationLocationId         String
+  destinationLocation           StockLocation          @relation(name: "destinationPurchaseOrderRelation", fields: [destinationLocationId], references: [id])
+  totalAcceptedQuantity         Int                    @default(0)
+  totalRejectedQuantity         Int                    @default(0)
+  totalRemainingQuantity        Int                    @default(0)
+  totalReceivedQuantity         Int                    @default(0)
+  totalTransferProductsQuantity Int                    @default(0)
+  products                      PurchaseOrderProduct[]
+  arrivesAt                     DateTime?
+  trackingNumber                String?
+  carrierId                     String?
+  carrier                       Carrier?               @relation(fields: [carrierId], references: [id])
+  isDeleted                     Boolean                @default(false)
+  status                        PurchaseOrderStatus    @default(OPEN)
+  createdAt                     DateTime               @default(now())
+  updatedAt                     DateTime               @updatedAt
+}
+
+model PurchaseOrderProduct {
+  id               String        @id @default(uuid())
+  productId        String
+  product          Product       @relation(fields: [productId], references: [id])
+  purchaseOrderId  String
+  purchaseOrder    PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  quantity         Int           @default(0)
+  acceptedQuantity Int           @default(0)
+  rejectedQuantity Int           @default(0)
+  title            String // product title
+  description      String? //product description
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([productId, purchaseOrderId], name: "purchase_order_product_Identifier")
+}
+
+model Order {
+  id                  String                 @id @default(uuid())
+  name                String
+  itemsQuantity       Int                    @default(0)
+  isArchived          Boolean                @default(false)
+  isDraft             Boolean                @default(false)
+  paymentStatus       OrderPaymentStatus     @default(unpaid)
+  fulfillmentStatus   OrderFulfillmentStatus @default(unfulfilled)
+  customerId          String
+  customer            User                   @relation(fields: [customerId], references: [id])
+  subTotalAmount      Int
+  totalAmount         Int
+  totalItems          Int
+  billingAddress      UserAddress            @relation(name: "orderBillingAddres", fields: [billingAddressId], references: [id])
+  billingAddressId    String
+  billingAddressJson  Json?
+  shipmentAddressJson Json?
+  discountAmount      Json?
+  shippingAmount      Json?
+  shipmentAddress     UserAddress            @relation(name: "orderShippingAddres", fields: [shipmentAddressId], references: [id])
+  shipmentAddressId   String
+  currency            String // TODO: make enum or db
+  tags                OrderTagItem[]
+  orderProducts       OrderProduct[]
+  notes               String?
+  orderDate           DateTime               @default(now())
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  isDeleted           Boolean                @default(false)
+}
+
+model OrderTagItem {
+  id      String   @id @default(uuid())
+  orderId String
+  order   Order    @relation(fields: [orderId], references: [id])
+  tag     OrderTag @relation(fields: [tagId], references: [id])
+  tagId   String
+
+  @@unique([orderId, tagId], name: "order_tag_Identifier")
+}
+
+model OrderTag {
+  id        String         @id @default(uuid())
+  name      String
+  isDeleted Boolean        @default(false)
+  orders    OrderTagItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model OrderProduct {
+  id          String           @id @default(uuid())
+  title       String
+  price       Int
+  totalPrice  Int
+  sku         String?
+  currency    String //TODO: make enum or db
+  quantity    Int
+  productId   String?
+  product     Product?         @relation(fields: [productId], references: [id])
+  orderId     String
+  order       Order            @relation(fields: [orderId], references: [id])
+  productType OrderProductType @default(reference)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model MarketplaceIntegration {
+  id                String             @id @default(uuid())
+  name              String?
+  imageUrl          String
+  miniImageUrl      String?
+  isConnected       Boolean            @default(false)
+  location          String             @default("tr")
+  fields            Json?
+  status            Boolean            @default(true)
+  categoryMatchings CategoryMatching[]
+  isDeleted         Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model CategoryMatching {
+  id                       String                 @id @default(uuid())
+  marketplaceCategoryId    String
+  marketplaceIntegrationId String
+  marketplaceIntegration   MarketplaceIntegration @relation(fields: [marketplaceIntegrationId], references: [id])
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Category {
+  id                 String             @id @default(uuid())
+  name               String
+  slug               String
+  content            String?
+  thumbnail          String?
+  hasChildren        Boolean            @default(false)
+  parentId           String?
+  parent             Category?          @relation("PARENT_CATEGORY", fields: [parentId], references: [id])
+  childrenCategories Category[]         @relation("PARENT_CATEGORY")
+  categoryMatch      CategoryMatching[]
+  isDeleted          Boolean            @default(false)
+  status             Boolean            @default(true)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  products           ProductCategory[]
+
+  @@unique([slug], name: "categoriesSlugIdentifier")
+}
+
+model Tag {
+  id        String       @id @default(uuid())
+  slug      String
+  name      String
+  content   String?
+  status    Boolean      @default(true)
+  isDeleted Boolean      @default(false)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  products  ProductTag[]
+
+  @@unique([slug], name: "categoriesSlugIdentifier")
+}
+
+model VariantOption {
+  id          String               @id @default(uuid())
+  key         String?
+  name        String
+  description String?
+  type        VariantOptionType    @default(text)
+  values      VariantOptionValue[]
+  isDeleted   Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  products    ProductOption[]
+}
+
+model VariantOptionValue {
+  id        String        @id @default(uuid())
+  key       String        @unique
+  value     String
+  isDeleted Boolean       @default(false)
+  optionId  String
+  image     String?
+  option    VariantOption @relation(fields: [optionId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  products ProductOption[]
+}
+
+model ProductCategory {
+  id         String   @id @default(uuid())
+  productId  String
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product  Product  @relation(fields: [productId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([productId, categoryId], name: "productCategoryIdentifier")
+}
+
+model ProductTag {
+  id        String   @id @default(uuid())
+  productId String
+  tagId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  tag     Tag     @relation(fields: [tagId], references: [id])
+
+  @@unique([productId, tagId], name: "productTagIdentifier")
+}
+
+model Product {
+  id                    String                 @id @default(uuid())
+  name                  String
+  media                 Json[]
+  content               String?
+  qrCode                String?
+  discountPrice         Float?
+  sellPrice             Float?
+  // Üründe indirim uygulanmışsa currentPrice -> discountPrice'a eşit olmalıdır.
+  // İndirim uygulanmamışsa currentPrice -> sellPrice'a eşit olmalıdır.
+  // currentPrice filtreleme ve sıralama işlemleri için kullanılıyor
+  currentPrice          Float?
+  purchasePrice         Float?
+  draft                 Boolean                @default(true)
+  status                Boolean                @default(true)
+  sku                   String?
+  barcode               String?
+  slug                  String?
+  hasVariant            Boolean                @default(false)
+  pageTitle             String?
+  pageDescription       String?
+  disallowSearchEngines Boolean                @default(false)
+  options               ProductOption[]
+  parentId              String?
+  brandId               String?
+  parent                Product?               @relation("ProductToProduct_parentId", fields: [parentId], references: [id])
+  variants              Product[]              @relation("ProductToProduct_parentId")
+  mainVariantId         String?
+  mainVariant           Product?               @relation("ProductToMainVariant", fields: [mainVariantId], references: [id])
+  mainVariants          Product[]              @relation("ProductToMainVariant")
+  brand                 Brand?                 @relation(fields: [brandId], references: [id])
+  stocks                Stock[]
+  opinions              Opinion[]
+  totalStockCount       Int                    @default(0)
+  totalVariantCount     Int                    @default(0)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  isDeleted             Boolean                @default(false)
+  categories            ProductCategory[]
+  tags                  ProductTag[]
+  transfers             TransferProduct[]
+  purchaseOrders        PurchaseOrderProduct[]
+  orders                OrderProduct[]
+  maxNumberOfPerCart    Int?
+  canonicalUrls         String[]
+  wishlists             WishList[]
+}
+
+model ProductOption {
+  id            String             @id @default(uuid())
+  optionId      String
+  option        VariantOption      @relation(fields: [optionId], references: [id])
+  optionValueId String
+  optionValue   VariantOptionValue @relation(fields: [optionValueId], references: [id])
+  productId     String
+  product       Product            @relation(fields: [productId], references: [id])
+  order         Int
+}
+
+model WishList {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Opinion {
+  id        String  @id @default(uuid())
+  name      String? @map("name")
+  status    Boolean @default(true)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+}
+
+model Pages {
+  id             Int            @id @default(autoincrement())
+  name           String         @db.Text
+  slug           String         @unique @db.Text
+  content        String         @db.Text
+  categoryId     Int
+  category       PageCategories @relation(fields: [categoryId], references: [id])
+  featuredImage  String
+  excerpt        String         @db.Text
+  isFeatured     Boolean        @default(false)
+  seoTitle       String         @db.Text
+  seoDescription String         @db.Text
+  status         Boolean        @default(true)
+  isDeleted      Boolean        @default(false)
+
+  @@map("pages")
+}
+
+model PageCategories {
+  id        Int     @id @default(autoincrement())
+  name      String  @db.Text
+  parent_id Int?
+  pages     Pages[]
+  isDeleted Boolean @default(false)
+}

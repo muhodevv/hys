@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: ecom-postgres
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: ecom-dev
+    ports:
+      - "5432:5432" # Exposing to the local network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # Named volume for persistent storage
+    networks:
+      - ecom-network
+
+volumes:
+  postgres_data: # Named volume
+
+networks:
+  ecom-network: # Custom network for communication between containers
+    driver: bridge
